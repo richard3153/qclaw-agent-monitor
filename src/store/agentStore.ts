@@ -9,14 +9,17 @@ interface AgentStore {
   loading: boolean;
   error: string | null;
   lastRefresh: number;
+  autoRefresh: boolean;  // 自动刷新开关
+  refreshInterval: number;  // 顶层，方便读取
   settings: { refreshInterval: number; stuckThresholdMinutes: number };
   
+  setAutoRefresh: (v: boolean) => void;
   setSettings: (s: Partial<AgentStore['settings']>) => void;
   refresh: () => Promise<void>;
 }
 
 const defaultSettings = {
-  refreshInterval: 10000,  // 10秒刷新（推荐值）
+  refreshInterval: 10000,  // 10秒刷新
   stuckThresholdMinutes: 5,
 };
 
@@ -41,7 +44,11 @@ export const useAgentStore = create<AgentStore>((set) => ({
   loading: false,
   error: null,
   lastRefresh: 0,
+  autoRefresh: true,
+  refreshInterval: defaultSettings.refreshInterval,
   settings: defaultSettings,
+  
+  setAutoRefresh: (v) => set({ autoRefresh: v }),
   
   setSettings: (s) => set(state => ({ settings: { ...state.settings, ...s } })),
   
