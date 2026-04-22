@@ -1,138 +1,190 @@
-# 🔭 qclaw-agent-monitor
+# QClaw Agent Monitor
 
-> English | [中文](#中文)
+[中文](#中文) · [English](#english)
 
-A real-time monitoring dashboard for [QClaw](https://github.com/) / OpenClaw agents. Track token consumption, CPU/memory usage, session activity, and more.
+---
 
-## Features | 功能特点
+## 中文
 
-- **Real-time Agent Status** — Instantly see which agents are running, idle, or completed
-- **Live Token Tracking** — Input, output, cache read/write tokens with cost estimation
-- **Resource Monitor** — CPU and memory estimates per agent
-- **Session History** — Session count, active sessions, last activity time
-- **Skill Detection** — Auto-detect installed skills per agent
-- **Dark Theme UI** — Clean, modern dark interface built with React + Vite
+### 是什么
 
-## 安装 | Installation
+QClaw Agent Monitor 是一个 **QClaw / OpenClaw 智能体实时监控面板**，用于可视化本地运行的所有智能体的状态、资源使用和对话历史。
+
+### 功能特性
+
+- 🟢 **实时状态**：自动检测运行中 / 卡住 / 已完成的智能体
+- 📊 **Token 统计**：实时追踪 input / output / cache tokens 消耗及预估费用
+- 🔄 **手动刷新 + 暂停**：右上角支持手动刷新和暂停自动轮询（节省资源）
+- 📁 **多智能体视图**：树状/列表视图，支持按状态分组显示
+- ⚠️ **异常报警**：自动标记 30 分钟无活动的智能体为卡住状态
+- 🚀 **轻量快速**：自建 Node.js API 层，直接读取文件系统，无 OpenClaw 认证依赖
+
+### 系统架构
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Browser (React + Vite)  http://localhost:3000      │
+│  ├─ Zustand Store (10s polling)                     │
+│  └─ AgentList / AgentCard / AgentTree               │
+└────────────────────┬────────────────────────────────┘
+                     │ fetch /api/agents
+                     │ (via Vite Proxy → 3001)
+┌────────────────────▼────────────────────────────────┐
+│  Node.js API Server  http://127.0.0.1:3001          │
+│  ├─ 5s 内存缓存 (减少磁盘 I/O)                        │
+│  ├─ 异步文件读取 (不阻塞事件循环)                      │
+│  └─ 并发控制 (最多 3 个文件并发)                      │
+└────────────────────┬────────────────────────────────┘
+                     │ fs.readdir / readFile
+┌────────────────────▼────────────────────────────────┐
+│  OpenClaw Data  (~/.qclaw/agents/)                 │
+│  ├─ sessions.json (会话列表)                         │
+│  └─ *.jsonl (每会话一条 JSONL 日志)                   │
+└─────────────────────────────────────────────────────┘
+```
+
+### 安装与启动
+
+#### 前置条件
+
+- Node.js ≥ 18
+- QClaw / OpenClaw 已安装并运行
+- GitHub Personal Access Token（有写入权限）
+
+#### 快速开始
 
 ```bash
-# 克隆仓库
+# 1. 克隆仓库
 git clone https://github.com/richard3153/qclaw-agent-monitor.git
 cd qclaw-agent-monitor
 
-# 安装依赖
+# 2. 安装依赖
 npm install
 
-# 启动后端 API 服务（端口 3001）
+# 3. 配置 Token（如果需要上传）
+# 将 GitHub PAT 写入 token.txt（不上传到 GitHub）
+echo "ghp_your_token_here" > token.txt
+
+# 4. 启动 API 服务器（后台）
 node server/agent-server.cjs
 
-# 启动前端（另一个终端，端口 3000）
+# 5. 启动前端（另一个终端）
 npm run dev
+
+# 6. 打开浏览器
+# http://localhost:3000
 ```
 
-Then open **http://localhost:3000**
+#### 一键上传到 GitHub（可选）
 
-## 适用场景 | Use Cases
+如果修改了代码，想同步到 GitHub 仓库：
 
-- **运维监控** — 监控多智能体运行状态，无需登录 Gateway UI
-- **成本分析** — 按智能体统计 Token 消耗和估算费用
-- **调试诊断** — 查看各智能体的 Session 活动和问题排查
-- **团队协作** — 大屏展示团队所有智能体健康状态
+```bash
+node upload.cjs
+```
 
-## 使用方法 | Usage
+> upload.cjs 会自动跳过 node_modules、.vite、.git 等非源码文件，只上传源代码。
 
-1. 启动后端服务 `node server/agent-server.cjs`
-2. 启动前端 `npm run dev`
-3. 打开 http://localhost:3000 查看监控面板
-4. 数据每 10 秒自动刷新（可配置）
+### 端口说明
 
-## 项目结构 | Project Structure
+| 端口  | 服务               | 说明                          |
+|-------|-------------------|-------------------------------|
+| 3000  | Vite 开发服务器    | 前端界面                      |
+| 3001  | Agent API Server  | 读取 ~.qclaw/agents/ 数据     |
+| 28789 | OpenClaw Gateway  | QClaw 原生 Web UI（不需要）  |
+
+### 文件结构
 
 ```
 qclaw-agent-monitor/
 ├── server/
-│   └── agent-server.cjs   # Node.js API 服务，读取 QClaw 本地数据
+│   └── agent-server.cjs    # Node.js API 服务器（核心）
 ├── src/
-│   ├── api/client.ts      # API 客户端
-│   ├── components/        # React 组件
-│   ├── store/             # Zustand 状态管理
-│   └── types/agent.ts     # TypeScript 类型定义
-├── index.html
+│   ├── api/
+│   │   └── client.ts       # 前端 API 客户端
+│   ├── components/
+│   │   ├── AgentCard.tsx   # 智能体卡片
+│   │   ├── AgentList.tsx  # 智能体列表（分组视图）
+│   │   ├── AgentNode.tsx  # 树状节点
+│   │   ├── AgentTree.tsx  # 树状结构视图
+│   │   ├── AlertPanel.tsx # 报警面板
+│   │   ├── ProgressBar.tsx
+│   │   ├── ResourceStats.tsx
+│   │   └── StatusBadge.tsx
+│   ├── store/
+│   │   └── agentStore.ts  # Zustand 状态管理
+│   ├── types/
+│   │   └── agent.ts       # TypeScript 类型定义
+│   ├── App.tsx            # 主应用入口
+│   └── main.tsx
+├── upload.cjs             # GitHub 上传脚本
 ├── package.json
+├── tsconfig.json
 ├── vite.config.ts
-└── SPEC.md               # 详细设计规范
+└── index.html
 ```
 
-## 技术栈 | Tech Stack
+### 常见问题
 
-- **Frontend**: React 18 + TypeScript + Vite
-- **State**: Zustand
-- **Styling**: CSS (dark theme)
-- **Backend**: Node.js (CommonJS) — 直接读取 QClaw 本地数据文件
+**Q: "failed to fetch" 错误？**
+> 检查 API 服务器是否运行：`curl http://127.0.0.1:3001/api/agents`
+> 如果返回 200，检查 Vite 是否正在运行（`npm run dev`）
 
-## 依赖说明 | Dependencies
+**Q: 看不到数据？**
+> 确认 QClaw 正在运行，且 `~/.qclaw/agents/` 目录下有智能体会话文件
 
-QClaw/OpenClaw Agent Monitor 读取以下本地数据源（无需额外 API Key）：
-
-- `~/.qclaw/openclaw.json` — 智能体配置和 Skills 列表
-- `~/.qclaw/agents/<agent-id>/sessions/sessions.json` — 会话信息
-- `~/.qclaw/agents/<agent-id>/sessions/*.jsonl` — 实时 Token 统计
+**Q: 浏览器卡顿？**
+> 点击右上角 "暂停" 按钮停止自动刷新，手动刷新即可
 
 ---
 
-# 🔭 QClaw 智能体监控面板
+## English
 
-[English](#english) | 中文
+### What is it
 
-实时监控 QClaw / OpenClaw 平台上的所有智能体，包括运行状态、Token 消耗、资源使用、Session 活动等。
+**QClaw Agent Monitor** is a real-time monitoring dashboard for [QClaw / OpenClaw](https://github.com/openclaw) AI agents, visualizing the status, resource usage, and conversation history of all local agents.
 
-## 快速开始
+### Features
+
+- 🟢 **Real-time Status**: Auto-detect running / stuck / completed agents
+- 📊 **Token Tracking**: Live input/output/cache token counts and estimated cost
+- 🔄 **Manual Refresh + Pause**: Top-right buttons to manually refresh or pause auto-polling
+- 📁 **Multi-agent View**: Tree and list views, grouped by status
+- ⚠️ **Alert System**: Auto-flag agents inactive for 30+ minutes as "stuck"
+- 🚀 **Lightweight & Fast**: Custom Node.js API layer, reads filesystem directly (no OpenClaw auth required)
+
+### Quick Start
 
 ```bash
-# 安装
+git clone https://github.com/richard3153/qclaw-agent-monitor.git
+cd qclaw-agent-monitor
 npm install
 
-# 启动 API 服务（端口 3001）
+# Terminal 1: Start API server
 node server/agent-server.cjs
 
-# 启动前端（端口 3000）
+# Terminal 2: Start frontend
 npm run dev
-# 或
-npm run build && npx serve dist -p 3000
+
+# Open http://localhost:3000
 ```
 
-打开 http://localhost:3000
+### Architecture
 
-## 主要功能
+- **Frontend**: React + Vite + Zustand (polls every 10s)
+- **API Server**: Node.js (port 3001), reads `~/.qclaw/agents/` directly
+- **Proxy**: Vite proxies `/api/*` → `http://127.0.0.1:3001`
+- **Cache**: 5-second in-memory cache to reduce disk I/O
+- **Async**: Fully non-blocking, max 3 concurrent file reads
 
-| 功能 | 说明 |
-|------|------|
-| 智能体状态 | running / idle / completed 实时状态 |
-| Token 统计 | input / output / cache read+write 分项统计 |
-| 费用估算 | 基于 GPT-4o-mini 费率估算费用 |
-| CPU / 内存 | 基于活跃度的资源估算 |
-| Session 活动 | 会话数量、活跃会话、最后活动时间 |
-| Skills | 自动检测各智能体安装的技能 |
-| 自动刷新 | 每 10 秒自动刷新数据 |
+### Upload to GitHub
 
-## 数据源
-
-监控面板直接读取 QClaw 本地数据目录，**无需任何额外配置**：
-
+```bash
+node upload.cjs
 ```
-C:\Users\<user>\.qclaw\
-├── openclaw.json              # 全局配置
-└── agents\
-    └── <agent-id>\
-        └── sessions\
-            ├── sessions.json   # 会话列表
-            └── *.jsonl         # 消息历史（Token 统计）
-```
+
+---
 
 ## License
 
 MIT
-
-## Topics
-
-`qclaw` `openclaw` `agent-monitor` `token-tracker` `dashboard` `react` `vite`
