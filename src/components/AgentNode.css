@@ -1,0 +1,109 @@
+.agent-node {
+  margin-bottom: 8px;
+}
+
+.agent-node.agent-stuck {
+  border-left: 3px solid #ef4444;
+  padding-left: 12px;
+  background: rgba(239, 68, 68, 0.05);
+  border-radius: 0 8px 8px 0;
+  padding: 8px 12px;
+  margin: 8px 0;
+}
+
+.agent-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.agent-icon {
+  font-size: 20px;
+  margin-top: 2px;
+}
+
+.agent-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.agent-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.agent-label {
+  margin-right: 4px;
+}
+
+.agent-id {
+  font-size: 12px;
+  color: #9ca3af;
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+.agent-status-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.agent-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.action-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.continue-btn {
+  background: #3b82f6;
+  color: white;
+}
+
+.continue-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.resume-btn {
+  background: #6b7280;
+  color: white;
+}
+
+.resume-btn:hover:not(:disabled) {
+  background: #4b5563;
+}
+
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.agent-error {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 6px;
+  font-size: 13px;
+  color: #dc2626;
+}
+
+.agent-children {
+  margin-top: 8px;
+  border-left: 2px dashed #e5e7eb;
+  margin-left: 10px;
+  padding-left: 18px;
+}
