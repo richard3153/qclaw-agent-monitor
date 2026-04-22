@@ -1,6 +1,7 @@
-// OpenClaw Gateway API 客户端
+// OpenClaw Agent Monitor API 客户端
+// 使用相对路径，通过 Vite 代理转发到后端 API
 
-const API_BASE = 'http://127.0.0.1:3001';
+const API_BASE = '/api';
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${url}`, {
