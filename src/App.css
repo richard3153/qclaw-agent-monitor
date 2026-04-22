@@ -34,6 +34,12 @@ body {
   z-index: 10;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .header-title {
   display: flex;
   align-items: center;
@@ -79,6 +85,36 @@ body {
 .refresh-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.pause-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid;
+  transition: all 0.15s ease;
+}
+
+.pause-btn.paused {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #f59e0b;
+}
+
+.pause-btn.paused:hover {
+  background: #fde68a;
+}
+
+.pause-btn.resumed {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #10b981;
+}
+
+.pause-btn.resumed:hover {
+  background: #a7f3d0;
 }
 
 .app-main {
