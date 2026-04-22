@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.vite/
+token.txt
+*.local
+.env*
